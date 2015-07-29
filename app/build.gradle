@@ -5,7 +5,7 @@ android {
     buildToolsVersion "22.0.1"
 
     defaultConfig {
-        applicationId "nacrneiro.org.fantasywithin"
+        applicationId "ncarneiro.org.fantasywithin"
         minSdkVersion 15
         targetSdkVersion 22
         versionCode 1
