@@ -4,7 +4,9 @@ import android.app.Service;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.IBinder;
+import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -23,8 +25,10 @@ import ncarneiro.org.fantasywithin.Referencer;
 public class NetworkService extends Service {
 
     NetworkTask networkTask;
-    String endereco = "http://"+ Referencer.getHost() + "/map_data.php";
+    String loadData = "http://"+ Referencer.getHost() + "/loadData.php";
+    String saveData = "http://"+ Referencer.getHost() + "/saveData.php";
     String resultado = "";
+    String op = "";
 
     @Override
     public IBinder onBind(Intent intent) {
@@ -34,7 +38,12 @@ public class NetworkService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         networkTask = new NetworkTask();
-        networkTask.execute(endereco);
+        op = intent.getStringExtra("OP");
+        String value = intent.getStringExtra("VALUE");
+        if (op.compareTo("LOAD") == 0)
+            networkTask.execute(loadData);
+        else
+            networkTask.execute(saveData,value);
         return 0;
     }
 
@@ -46,28 +55,22 @@ public class NetworkService extends Service {
     }
 
     private class NetworkTask extends AsyncTask<String,String,String>{
-
         URL url = null;
-        HttpURLConnection urlConnection = null;
-        InputStream in = null;
+        HttpURLConnection con = null;
 
         @Override
         protected String doInBackground(String... params) {
-            /*
-            while (!isCancelled()) {
-                System.out.println(params[0]);
-                try {
-                    Thread.sleep(800);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                if (false)
-                    return "Algo errado n„o est· certo";
-            }
-*/
             try {
-                URL url = new URL(params[0]);
-                HttpURLConnection con = (HttpURLConnection) url.openConnection();
+                String end = params[0];
+                if (op.compareTo("LOAD")==0)
+                    end += "?table=recurso";
+                else {
+                    String param = params[1].trim().toUpperCase();
+                    end += "?table=recurso&descricao="+param;
+                }
+
+                url = new URL(end);
+                con = (HttpURLConnection) url.openConnection();
                 resultado = readStream(con.getInputStream());
             } catch (Exception e) {
                 e.printStackTrace();
@@ -75,6 +78,44 @@ public class NetworkService extends Service {
             return resultado;
         }
 
+        @Override
+        protected void onPostExecute(String s) {
+            String resultado_final = "";
+            TextView tv = null;
+            if (op.compareTo("LOAD")==0) {
+                resultado_final = json_parse(s);
+                tv = (TextView) (Referencer.getAct().findViewById(R.id.texto_carregar));
+                tv.setText(resultado_final);
+            }
+            else {
+                // TODO: IF OK OR NOT OK
+                Toast.makeText(
+                        Referencer.getAct(),"Conte√∫do salvo!",Toast.LENGTH_SHORT).show();
+            }
+
+            System.out.println("Post Execute");
+            super.onPostExecute(s);
+        }
+
+        public String json_parse(String str){
+            String json_string = "";
+            try {
+                JSONArray json = new JSONArray(str);
+                for (int i = 0; i < json.length() ; i++) {
+                    JSONObject json_obj = json.getJSONObject(i);
+                    String key;
+                    while ( json_obj.keys().hasNext()) {
+                        key = json_obj.keys().next();
+                        json_string += key + ": " + json_obj.get(key).toString() + "\n";
+                        json_obj.remove(key);
+                    }
+                    json_string += "\n";
+                }
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+            return json_string;
+        }
 
         private String readStream(InputStream in) {
             BufferedReader reader = null;
@@ -98,32 +139,6 @@ public class NetworkService extends Service {
                 }
             }
             return result;
-        }
-
-        @Override
-        protected void onPostExecute(String s) {
-            String json_string = "";
-
-            try {
-                JSONArray json = new JSONArray(s);
-                for (int i = 0; i < json.length() ; i++) {
-                    JSONObject json_obj = json.getJSONObject(i);
-                    String key;
-                    while ( json_obj.keys().hasNext()) {
-                        key = json_obj.keys().next();
-                        json_string += key + ": " + json_obj.get(key).toString() + "\n";
-                        json_obj.remove(key);
-                    }
-                    json_string += "\n";
-                }
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-
-            TextView tv = (TextView) (Referencer.getAct().findViewById(R.id.texto_resultado));
-            tv.setText(json_string);
-            System.out.println("Post Execute");
-            super.onPostExecute(s);
         }
 
         @Override

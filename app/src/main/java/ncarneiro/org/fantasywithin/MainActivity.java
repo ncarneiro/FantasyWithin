@@ -7,6 +7,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.Toast;
 
 import services.NetworkService;
 
@@ -38,13 +39,25 @@ public class MainActivity extends Activity {
         if (id == R.id.action_settings) {
             return true;
         }
-
         return super.onOptionsItemSelected(item);
     }
 
     public void loadData(View view) {
         Intent intent = new Intent(this, NetworkService.class);
+        intent.putExtra("OP","LOAD");
         startService(intent);
+    }
+
+    public void saveData(View view) {
+        Intent intent = new Intent(this, NetworkService.class);
+        intent.putExtra("OP","SAVE");
+        String texto = ((EditText) findViewById(R.id.texto_salvar)).getText().toString();
+        if (texto != null) {
+            intent.putExtra("VALUE", texto);
+            startService(intent);
+        }
+        else
+            Toast.makeText(this,"Vazio não caramba, preenche essa merda",Toast.LENGTH_SHORT).show();
     }
 
     public void stopServices(View v){

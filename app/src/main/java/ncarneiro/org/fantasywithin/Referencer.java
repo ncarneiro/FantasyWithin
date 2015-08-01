@@ -8,7 +8,7 @@ import android.app.Activity;
 public class Referencer {
 
     private static Activity act;
-    private static String host = "fantasywithin.ddns.net";
+    private static String host = "fantasywithin.ddns.net"; // TODO: rodando no lab_vis2, passar pra um servidor remoto no futuro
 
     public static void setAct(Activity act) {
         Referencer.act = act;
